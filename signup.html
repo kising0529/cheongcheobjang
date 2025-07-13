@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>회원가입 | 나만의 청첩장</title>
   <link rel="stylesheet" href="signup.css">
+  <script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js"></script>
 </head>
 <body>
   <div class="signup-container">
@@ -47,14 +48,13 @@
       const password = form.password.value;
       const passwordConfirm = form['password-confirm'].value;
 
-      // 비밀번호 2회 입력 일치 확인
       if (password !== passwordConfirm) {
         messageDiv.textContent = '비밀번호가 일치하지 않습니다.';
         return;
       }
 
       // 이메일 중복 체크 (users 테이블 기준)
-     // messageDiv.textContent = '이메일 중복 확인 중...';
+      // messageDiv.textContent = '이메일 중복 확인 중...';
       const duplicated = await isEmailDuplicated(email);
       if (duplicated) {
         messageDiv.textContent = '이미 가입된 이메일입니다.';
@@ -72,21 +72,25 @@
         return;
       }
 
-      // 인증 메일 발송됨, 사용자는 인증 후 로그인해야 함
+      // 비밀번호 해시
+      const hashedPassword = bcrypt.hashSync(password, 10);
+
       // 인증 후 로그인 시점에 추가 정보 저장
+      supabase.auth.onAuthStateChange(async (event, session) => {
+        if (event === 'SIGNED_IN' && session?.user) {
+          await supabase.from('users').upsert([
+            {
+              id: session.user.id,
+              email: session.user.email,
+              password: hashedPassword, // 해시된 비밀번호 저장
+              created_at: new Date().toISOString()
+            }
+          ]);
+        }
+      });
 
       messageDiv.textContent = '회원가입 성공! 이메일을 확인해 주세요.';
       form.reset();
-    });
-
-    // 로그인 후(또는 onAuthStateChange에서)
-    supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        // 커스텀 users 테이블에 upsert
-        await supabase.from('users').upsert([
-          { id: session.user.id, email: session.user.email, created_at: new Date().toISOString() }
-        ]);
-      }
     });
   </script>
 </body>
