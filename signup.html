@@ -73,7 +73,7 @@
       }
 
       // 비밀번호 해시
-      const hashedPassword = bcrypt.hashSync(password, 10);
+      const hashedPassword = window.bcrypt.hashSync(password, 10);
 
       // 인증 후 로그인 시점에 추가 정보 저장
       supabase.auth.onAuthStateChange(async (event, session) => {
