@@ -63,7 +63,7 @@
 
       // supabase 회원가입 (auth)
       messageDiv.textContent = '회원가입 처리 중...';
-      const { error: signUpError } = await supabase.auth.signUp({
+      const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password
       });
@@ -72,8 +72,21 @@
         return;
       }
 
+      // 인증 메일 발송됨, 사용자는 인증 후 로그인해야 함
+      // 인증 후 로그인 시점에 추가 정보 저장
+
       messageDiv.textContent = '회원가입 성공! 이메일을 확인해 주세요.';
       form.reset();
+    });
+
+    // 로그인 후(또는 onAuthStateChange에서)
+    supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        // 커스텀 users 테이블에 upsert
+        await supabase.from('users').upsert([
+          { id: session.user.id, email: session.user.email, created_at: new Date().toISOString() }
+        ]);
+      }
     });
   </script>
 </body>
