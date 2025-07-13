@@ -39,7 +39,7 @@
 
       const email = form.email.value.trim();
       const password = form.password.value;
-      const remember = form.remember.checked;
+      // const remember = form.remember.checked; // 더 이상 사용하지 않음
 
       messageDiv.textContent = '로그인 중...';
       const { error, data } = await supabase.auth.signInWithPassword({
@@ -49,16 +49,6 @@
       if (error) {
         messageDiv.textContent = '로그인 실패: ' + error.message;
         return;
-      }
-
-      // 로그인 유지: supabase는 기본적으로 localStorage를 사용함. 필요시 세션Storage로 변경 가능
-      if (!remember) {
-        // 세션만 유지: 토큰을 sessionStorage로 옮기고 localStorage에서 삭제
-        const token = localStorage.getItem('sb-' + supabase._instance.supabaseKey + '-auth-token');
-        if (token) {
-          sessionStorage.setItem('sb-' + supabase._instance.supabaseKey + '-auth-token', token);
-          localStorage.removeItem('sb-' + supabase._instance.supabaseKey + '-auth-token');
-        }
       }
 
       messageDiv.textContent = '로그인 성공! 청첩장 생성 페이지로 이동합니다...';
