@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>방명록 | 나만의 청첩장</title>
+  <link rel="stylesheet" href="guestbook.css">
+</head>
+<body>
+  <div class="guestbook-container">
+    <h1>🌸 방명록</h1>
+    <form id="guestbook-form">
+      <div class="form-row">
+        <label for="guest-name">이름</label>
+        <input type="text" id="guest-name" name="guest-name" required maxlength="12">
+      </div>
+      <div class="form-row">
+        <label for="guest-msg">축하 메시지</label>
+        <textarea id="guest-msg" name="guest-msg" rows="3" required maxlength="200" placeholder="축하의 한마디를 남겨주세요!"></textarea>
+      </div>
+      <button type="submit">메시지 남기기</button>
+    </form>
+    <div id="guestbook-message"></div>
+    <div class="guestbook-list" id="guestbook-list">
+      <!-- 메시지 리스트가 JS로 렌더링됨 -->
+    </div>
+  </div>
+  <script type="module">
+    import { supabase } from './supabase.js';
+
+    // 금칙어(간단 예시)
+    const BAD_WORDS = ['욕설1', '욕설2', 'fuck', 'shit'];
+    function hasBadWord(msg) {
+      return BAD_WORDS.some(word => msg.includes(word));
+    }
+
+    // 초대장 고유코드(쿼리스트링)
+    const inviteId = new URLSearchParams(window.location.search).get('id') || 'abcd1234';
+    // 로그인 유저(삭제 권한용, 실제 구현시 supabase.auth.user() 등 활용)
+    let currentUser = null;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      currentUser = user;
+    } catch {}
+    // 청첩장 주인 id(실제 구현시 supabase에서 불러오기)
+    let ownerId = null;
+    async function fetchOwnerId() {
+      const { data } = await supabase.from('invitations').select('created_by').eq('id', inviteId).single();
+      ownerId = data ? data.created_by : null;
+    }
+    await fetchOwnerId();
+
+    // 메시지 리스트 렌더링
+    async function loadGuestbook() {
+      const listDiv = document.getElementById('guestbook-list');
+      listDiv.innerHTML = '<div style="color:#b07a8c;">불러오는 중...</div>';
+      const { data, error } = await supabase
+        .from('guestbook')
+        .select('*')
+        .eq('invite_id', inviteId)
+        .order('created_at', { ascending: false });
+      if (error) {
+        listDiv.innerHTML = '<div style="color:#c06c8c;">불러오기 실패</div>';
+        return;
+      }
+      if (!data || data.length === 0) {
+        listDiv.innerHTML = '<div style="color:#b07a8c;">아직 메시지가 없습니다.</div>';
+        return;
+      }
+      listDiv.innerHTML = '';
+      data.forEach(msg => {
+        const item = document.createElement('div');
+        item.className = 'guestbook-item';
+        item.innerHTML = `
+          <div class="guest-name">${msg.name}</div>
+          <div class="guest-msg">${msg.message}</div>
+          <div class="guest-date">${new Date(msg.created_at).toLocaleString('ko-KR')}</div>
+        `;
+        // 삭제 버튼(본인/주인만)
+        if (currentUser && (currentUser.id === msg.user_id || currentUser.id === ownerId)) {
+          const delBtn = document.createElement('button');
+          delBtn.className = 'delete-btn';
+          delBtn.textContent = '삭제';
+          delBtn.onclick = async () => {
+            if (confirm('정말 삭제하시겠습니까?')) {
+              await supabase.from('guestbook').delete().eq('id', msg.id);
+              loadGuestbook();
+            }
+          };
+          item.appendChild(delBtn);
+        }
+        listDiv.appendChild(item);
+      });
+    }
+
+    // 메시지 작성/저장
+    const form = document.getElementById('guestbook-form');
+    const messageDiv = document.getElementById('guestbook-message');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      messageDiv.textContent = '';
+      const name = form['guest-name'].value.trim();
+      const message = form['guest-msg'].value.trim();
+      if (!name || !message) {
+        messageDiv.textContent = '이름과 메시지를 모두 입력해 주세요.';
+        return;
+      }
+      if (hasBadWord(message)) {
+        messageDiv.textContent = '부적절한 단어가 포함되어 있습니다.';
+        return;
+      }
+      // supabase 저장
+      const { error } = await supabase.from('guestbook').insert([{
+        invite_id: inviteId,
+        name,
+        message,
+        user_id: currentUser ? currentUser.id : null,
+        created_at: new Date().toISOString()
+      }]);
+      if (error) {
+        messageDiv.textContent = '메시지 저장 실패: ' + error.message;
+        return;
+      }
+      form.reset();
+      messageDiv.textContent = '메시지가 등록되었습니다!';
+      loadGuestbook();
+    });
+
+    // 최초 메시지 리스트 불러오기
+    loadGuestbook();
+  </script>
+</body>
+</html> 

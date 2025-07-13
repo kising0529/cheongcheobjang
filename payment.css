@@ -1,0 +1,103 @@
+.payment-container {
+  max-width: 420px;
+  margin: 60px auto;
+  background: #fff8fa;
+  border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(220, 120, 170, 0.10), 0 1.5px 6px rgba(255, 200, 220, 0.10);
+  padding: 40px 32px 32px 32px;
+  border: 1.5px solid #ffe0ef;
+  text-align: center;
+}
+
+.payment-container h1 {
+  color: #d48c9c;
+  font-family: 'Nanum Myeongjo', serif;
+  font-size: 2.1rem;
+  margin-bottom: 32px;
+  letter-spacing: 1px;
+}
+
+.premium-info {
+  background: #fff;
+  border-radius: 12px;
+  border: 1.5px solid #ffd6e6;
+  box-shadow: 0 2px 8px rgba(220, 120, 170, 0.06);
+  padding: 18px 16px 14px 16px;
+  margin-bottom: 28px;
+}
+.premium-title {
+  color: #a05c7b;
+  font-size: 1.18rem;
+  font-weight: bold;
+  margin-bottom: 7px;
+}
+.premium-desc {
+  color: #b07a8c;
+  font-size: 1.02rem;
+  margin-bottom: 10px;
+}
+.premium-price {
+  color: #c06c8c;
+  font-size: 1.12rem;
+  font-weight: bold;
+}
+#premium-price {
+  color: #e6b800;
+  font-size: 1.18rem;
+  font-weight: bold;
+}
+
+.payment-methods {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+.pay-btn {
+  width: 100%;
+  padding: 13px 0;
+  font-size: 1.08rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(220, 120, 170, 0.08);
+  transition: background 0.2s;
+}
+.pay-btn.kakao {
+  background: #fee500;
+  color: #3c1e1e;
+}
+.pay-btn.kakao:hover {
+  background: #ffe16a;
+}
+.pay-btn.toss {
+  background: #40c4ff;
+  color: #fff;
+}
+.pay-btn.toss:hover {
+  background: #82d8ff;
+}
+.pay-btn.card {
+  background: linear-gradient(90deg, #f7c6d6 0%, #ffe6f0 100%);
+  color: #a05c7b;
+}
+.pay-btn.card:hover {
+  background: linear-gradient(90deg, #ffe6f0 0%, #f7c6d6 100%);
+}
+
+.payment-message {
+  margin-bottom: 18px;
+  color: #b07a8c;
+  font-size: 1.02rem;
+  min-height: 24px;
+}
+
+.home-link {
+  display: inline-block;
+  margin-top: 18px;
+  color: #b07a8c;
+  font-size: 1.05rem;
+  text-decoration: underline;
+  font-weight: 600;
+} 

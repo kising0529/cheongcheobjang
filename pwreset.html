@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>비밀번호 찾기 | 나만의 청첩장</title>
+  <link rel="stylesheet" href="pwreset.css">
+</head>
+<body>
+  <div class="pwreset-container">
+    <h1>🔑 비밀번호 찾기</h1>
+    <form id="pwreset-form">
+      <label for="email">이메일</label>
+      <input type="email" id="email" name="email" required autocomplete="email">
+      <button type="submit">비밀번호 재설정 메일 보내기</button>
+    </form>
+    <div id="pwreset-message"></div>
+    <p class="login-link">로그인 화면으로 <a href="login.html">돌아가기</a></p>
+  </div>
+  <script type="module">
+    import { supabase } from './supabase.js';
+
+    const form = document.getElementById('pwreset-form');
+    const messageDiv = document.getElementById('pwreset-message');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      messageDiv.textContent = '';
+      const email = form.email.value.trim();
+      messageDiv.textContent = '메일 전송 중...';
+      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      if (error) {
+        messageDiv.textContent = '메일 전송 실패: ' + error.message;
+        return;
+      }
+      messageDiv.textContent = '비밀번호 재설정 메일이 전송되었습니다. 메일함을 확인해 주세요!';
+      form.reset();
+    });
+  </script>
+</body>
+</html> 

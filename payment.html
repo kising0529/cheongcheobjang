@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>프리미엄 결제 | 나만의 청첩장</title>
+  <link rel="stylesheet" href="payment.css">
+</head>
+<body>
+  <div class="payment-container">
+    <h1>💎 프리미엄 템플릿 결제</h1>
+    <div class="premium-info">
+      <div class="premium-title">프리미엄 템플릿</div>
+      <div class="premium-desc">더 고급스럽고 특별한 청첩장을 원하시나요?<br>프리미엄 템플릿을 선택하시면 광고 없이 다양한 혜택을 누릴 수 있습니다.</div>
+      <div class="premium-price">가격: <span id="premium-price">9,900원</span></div>
+    </div>
+    <div class="payment-methods">
+      <button class="pay-btn kakao">카카오페이 결제</button>
+      <button class="pay-btn toss">토스 결제</button>
+      <button class="pay-btn card">카드 결제</button>
+    </div>
+    <div class="payment-message" id="payment-message">결제 후 프리미엄 기능이 즉시 활성화됩니다.</div>
+    <a href="/" class="home-link">메인으로 돌아가기</a>
+  </div>
+  <script type="module">
+    import { supabase } from './supabase.js';
+
+    // 초대장 고유코드(쿼리스트링)
+    const inviteId = new URLSearchParams(window.location.search).get('id') || 'abcd1234';
+    // 결제 금액/상품 정보
+    const price = 9900;
+    const product = '프리미엄 템플릿';
+
+    // 결제 처리 함수(실제 결제 연동 대신 alert, 결제 성공 시 supabase 저장)
+    async function handlePayment(method) {
+      // 실제 결제 연동은 각 PG사 SDK/API 사용
+      alert(`${method} 결제 테스트: 결제가 성공했다고 가정합니다.`);
+      // 결제 내역 supabase 저장
+      const { error } = await supabase.from('payments').insert([{
+        invite_id: inviteId,
+        product,
+        price,
+        method,
+        paid_at: new Date().toISOString()
+      }]);
+      if (error) {
+        document.getElementById('payment-message').textContent = '결제 내역 저장 실패: ' + error.message;
+        return;
+      }
+      // 프리미엄 활성화 (invitations 테이블 업데이트)
+      await supabase.from('invitations').update({ is_premium: true }).eq('id', inviteId);
+      // 결제 완료 안내 및 이동
+      document.getElementById('payment-message').innerHTML = '결제가 완료되었습니다!<br><a href="create-invite-success.html?id='+inviteId+'">청첩장으로 이동</a>';
+    }
+
+    document.querySelector('.pay-btn.kakao').addEventListener('click', () => handlePayment('카카오페이'));
+    document.querySelector('.pay-btn.toss').addEventListener('click', () => handlePayment('토스'));
+    document.querySelector('.pay-btn.card').addEventListener('click', () => handlePayment('카드'));
+  </script>
+</body>
+</html> 

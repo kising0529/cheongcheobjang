@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>관리자 대시보드 | 나만의 청첩장</title>
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <div class="admin-container">
+    <h1>🔑 관리자 대시보드</h1>
+    <div id="admin-login-section">
+      <form id="admin-login-form">
+        <input type="email" id="admin-email" placeholder="관리자 이메일" required>
+        <input type="password" id="admin-password" placeholder="비밀번호" required>
+        <button type="submit">로그인</button>
+      </form>
+      <div id="admin-login-message"></div>
+    </div>
+    <div id="admin-dashboard-section" style="display:none;">
+      <div class="dashboard-cards">
+        <div class="dashboard-card"><div class="card-title">회원 수</div><div class="card-value" id="user-count">0</div></div>
+        <div class="dashboard-card"><div class="card-title">청첩장 수</div><div class="card-value" id="invite-count">0</div></div>
+        <div class="dashboard-card"><div class="card-title">결제 건수</div><div class="card-value" id="payment-count">0</div></div>
+        <div class="dashboard-card"><div class="card-title">총 방문자</div><div class="card-value" id="visitor-count">0</div></div>
+      </div>
+      <h2>템플릿 관리</h2>
+      <div class="template-manage-section">
+        <form id="template-upload-form">
+          <input type="text" id="template-name" placeholder="템플릿 이름" required>
+          <div class="ai-image-row">
+            <input type="text" id="ai-prompt" placeholder="AI 이미지 프롬프트 (예: 핑크 플로럴 웨딩)" style="flex:1;">
+            <button type="button" id="ai-generate-btn">AI로 이미지 생성</button>
+          </div>
+          <input type="file" id="template-thumb" accept="image/*" required>
+          <input type="file" id="template-preview" accept="image/*" required>
+          <div class="ai-preview-row">
+            <img id="ai-thumb-preview" style="width:80px;display:none;margin:4px 8px 4px 0;border-radius:7px;">
+            <img id="ai-preview-preview" style="width:120px;display:none;margin:4px 0 4px 8px;border-radius:7px;">
+          </div>
+          <label><input type="checkbox" id="template-premium"> 프리미엄</label>
+          <button type="submit">템플릿 업로드</button>
+        </form>
+        <div id="template-manage-message"></div>
+        <div class="template-list" id="admin-template-list">
+          <!-- 템플릿 리스트가 JS로 렌더링됨 -->
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="module">
+    import { supabase } from './supabase.js';
+
+    // 관리자 로그인
+    const loginForm = document.getElementById('admin-login-form');
+    const loginMsg = document.getElementById('admin-login-message');
+    const loginSection = document.getElementById('admin-login-section');
+    const dashboardSection = document.getElementById('admin-dashboard-section');
+    let adminUser = null;
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      loginMsg.textContent = '';
+      const email = document.getElementById('admin-email').value;
+      const password = document.getElementById('admin-password').value;
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        loginMsg.textContent = '로그인 실패: ' + error.message;
+        return;
+      }
+      // 관리자 이메일 체크(간단 예시, 실제 운영시 role 필드 등 활용)
+      if (!email.endsWith('@admin.com')) {
+        loginMsg.textContent = '관리자 권한이 없습니다.';
+        await supabase.auth.signOut();
+        return;
+      }
+      adminUser = data.user;
+      loginSection.style.display = 'none';
+      dashboardSection.style.display = 'block';
+      loadDashboard();
+      loadTemplates();
+    });
+
+    // 대시보드 카드 데이터 불러오기
+    async function loadDashboard() {
+      // 회원 수
+      const { count: userCount } = await supabase.from('users').select('*', { count: 'exact', head: true });
+      document.getElementById('user-count').textContent = userCount ?? '-';
+      // 청첩장 수
+      const { count: inviteCount } = await supabase.from('invitations').select('*', { count: 'exact', head: true });
+      document.getElementById('invite-count').textContent = inviteCount ?? '-';
+      // 결제 건수
+      const { count: paymentCount } = await supabase.from('payments').select('*', { count: 'exact', head: true });
+      document.getElementById('payment-count').textContent = paymentCount ?? '-';
+      // 방문자 수(예시: invitations 테이블의 view_count 합산)
+      const { data: invites } = await supabase.from('invitations').select('view_count');
+      const visitorCount = invites ? invites.reduce((sum, i) => sum + (i.view_count || 0), 0) : 0;
+      document.getElementById('visitor-count').textContent = visitorCount;
+    }
+
+    // 템플릿 업로드
+    const tplForm = document.getElementById('template-upload-form');
+    const tplMsg = document.getElementById('template-manage-message');
+    tplForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      tplMsg.textContent = '';
+      const name = document.getElementById('template-name').value;
+      const thumbFile = document.getElementById('template-thumb').files[0];
+      const previewFile = document.getElementById('template-preview').files[0];
+      const premium = document.getElementById('template-premium').checked;
+      if (!thumbFile || !previewFile) {
+        tplMsg.textContent = '썸네일/미리보기 이미지를 모두 선택해 주세요.';
+        return;
+      }
+      // storage 업로드
+      const id = Math.random().toString(36).substr(2, 8);
+      const thumbPath = `templates/${id}/thumb.${thumbFile.name.split('.').pop()}`;
+      const previewPath = `templates/${id}/preview.${previewFile.name.split('.').pop()}`;
+      const { error: thumbErr } = await supabase.storage.from('template-images').upload(thumbPath, thumbFile, { upsert: true });
+      const { error: prevErr } = await supabase.storage.from('template-images').upload(previewPath, previewFile, { upsert: true });
+      if (thumbErr || prevErr) {
+        tplMsg.textContent = '이미지 업로드 실패';
+        return;
+      }
+      const { data: thumbUrl } = supabase.storage.from('template-images').getPublicUrl(thumbPath);
+      const { data: previewUrl } = supabase.storage.from('template-images').getPublicUrl(previewPath);
+      // DB 저장
+      const { error } = await supabase.from('templates').insert([{
+        id, name, thumb: thumbUrl.publicUrl, preview: previewUrl.publicUrl, premium
+      }]);
+      if (error) {
+        tplMsg.textContent = 'DB 저장 실패: ' + error.message;
+        return;
+      }
+      tplMsg.textContent = '템플릿이 업로드되었습니다!';
+      tplForm.reset();
+      loadTemplates();
+    });
+
+    // 템플릿 리스트/삭제
+    async function loadTemplates() {
+      const listDiv = document.getElementById('admin-template-list');
+      listDiv.innerHTML = '불러오는 중...';
+      const { data, error } = await supabase.from('templates').select('*').order('created_at', { ascending: false });
+      if (error) {
+        listDiv.innerHTML = '불러오기 실패';
+        return;
+      }
+      if (!data || data.length === 0) {
+        listDiv.innerHTML = '등록된 템플릿이 없습니다.';
+        return;
+      }
+      listDiv.innerHTML = '';
+      data.forEach(tpl => {
+        const card = document.createElement('div');
+        card.className = 'template-card';
+        card.innerHTML = `
+          <img src="${tpl.thumb}" alt="${tpl.name}" style="width:80px;height:60px;object-fit:cover;border-radius:7px;margin-right:10px;vertical-align:middle;">
+          <span style="font-weight:bold;color:#a05c7b;">${tpl.name}</span>
+          ${tpl.premium ? '<span class="premium-tag">프리미엄</span>' : ''}
+          <button class="tpl-del-btn" style="float:right;">삭제</button>
+        `;
+        card.querySelector('.tpl-del-btn').onclick = async () => {
+          if (confirm('정말 삭제하시겠습니까?')) {
+            await supabase.from('templates').delete().eq('id', tpl.id);
+            loadTemplates();
+          }
+        };
+        listDiv.appendChild(card);
+      });
+    }
+
+    // AI 이미지 생성 기능
+    const aiBtn = document.getElementById('ai-generate-btn');
+    const aiPrompt = document.getElementById('ai-prompt');
+    const aiThumbPreview = document.getElementById('ai-thumb-preview');
+    const aiPreviewPreview = document.getElementById('ai-preview-preview');
+    aiBtn.addEventListener('click', async () => {
+      const prompt = aiPrompt.value.trim();
+      if (!prompt) {
+        alert('프롬프트를 입력해 주세요!');
+        return;
+      }
+      aiBtn.disabled = true;
+      aiBtn.textContent = '생성 중...';
+      // 실제 API 키/엔드포인트는 별도 환경변수로 관리 필요
+      // 아래는 DALL·E API 예시(fetch)
+      try {
+        const res = await fetch('https://api.openai.com/v1/images/generations', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer YOUR_OPENAI_API_KEY' // 실제 키로 교체
+          },
+          body: JSON.stringify({
+            prompt,
+            n: 1,
+            size: '512x512'
+          })
+        });
+        const data = await res.json();
+        if (!data.data || !data.data[0] || !data.data[0].url) throw new Error('이미지 생성 실패');
+        const imgUrl = data.data[0].url;
+        // 썸네일/미리보기 미리보기 표시
+        aiThumbPreview.src = imgUrl;
+        aiThumbPreview.style.display = 'inline-block';
+        aiPreviewPreview.src = imgUrl;
+        aiPreviewPreview.style.display = 'inline-block';
+        // 이미지를 Blob으로 받아 input[type=file]에 할당
+        const imgBlob = await (await fetch(imgUrl)).blob();
+        // 썸네일
+        const thumbFile = new File([imgBlob], 'ai-thumb.png', { type: imgBlob.type });
+        const dt1 = new DataTransfer();
+        dt1.items.add(thumbFile);
+        document.getElementById('template-thumb').files = dt1.files;
+        // 미리보기
+        const previewFile = new File([imgBlob], 'ai-preview.png', { type: imgBlob.type });
+        const dt2 = new DataTransfer();
+        dt2.items.add(previewFile);
+        document.getElementById('template-preview').files = dt2.files;
+      } catch (err) {
+        alert('AI 이미지 생성 실패: ' + err.message);
+      }
+      aiBtn.disabled = false;
+      aiBtn.textContent = 'AI로 이미지 생성';
+    });
+  </script>
+</body>
+</html> 

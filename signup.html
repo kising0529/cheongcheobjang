@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>회원가입 | 나만의 청첩장</title>
+  <link rel="stylesheet" href="signup.css">
+</head>
+<body>
+  <div class="signup-container">
+    <h1>💍 회원가입</h1>
+    <form id="signup-form">
+      <label for="email">이메일</label>
+      <input type="email" id="email" name="email" required autocomplete="email">
+
+      <label for="password">비밀번호</label>
+      <input type="password" id="password" name="password" required autocomplete="new-password">
+
+      <label for="password-confirm">비밀번호 확인</label>
+      <input type="password" id="password-confirm" name="password-confirm" required autocomplete="new-password">
+
+      <button type="submit">회원가입</button>
+    </form>
+    <div id="signup-message"></div>
+    <p class="login-link">이미 계정이 있으신가요? <a href="login.html">로그인</a></p>
+  </div>
+  <script type="module">
+    import { supabase } from './supabase.js';
+
+    const form = document.getElementById('signup-form');
+    const messageDiv = document.getElementById('signup-message');
+
+    // 이메일 중복 체크 함수
+    async function isEmailDuplicated(email) {
+      const { data, error } = await supabase
+        .from('users')
+        .select('email')
+        .eq('email', email);
+      return data && data.length > 0;
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      messageDiv.textContent = '';
+
+      const email = form.email.value.trim();
+      const password = form.password.value;
+      const passwordConfirm = form['password-confirm'].value;
+
+      // 비밀번호 2회 입력 일치 확인
+      if (password !== passwordConfirm) {
+        messageDiv.textContent = '비밀번호가 일치하지 않습니다.';
+        return;
+      }
+
+      // 이메일 중복 체크 (users 테이블 기준)
+      messageDiv.textContent = '이메일 중복 확인 중...';
+      const duplicated = await isEmailDuplicated(email);
+      if (duplicated) {
+        messageDiv.textContent = '이미 가입된 이메일입니다.';
+        return;
+      }
+
+      // supabase 회원가입 (auth)
+      messageDiv.textContent = '회원가입 처리 중...';
+      const { error: signUpError } = await supabase.auth.signUp({
+        email,
+        password
+      });
+      if (signUpError) {
+        messageDiv.textContent = '회원가입 실패: ' + signUpError.message;
+        return;
+      }
+
+      messageDiv.textContent = '회원가입 성공! 이메일을 확인해 주세요.';
+      form.reset();
+    });
+  </script>
+</body>
+</html> 

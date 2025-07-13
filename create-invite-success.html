@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>청첩장 생성 완료 | 나만의 청첩장</title>
+  <link rel="stylesheet" href="create-invite-success.css">
+</head>
+<body>
+  <div class="success-container">
+    <h1>🎉 청첩장 생성 완료</h1>
+    <div class="success-info">
+      <div class="success-url-row">
+        <span id="invite-url">https://mywedding.site/invite/abcd1234</span>
+        <button id="copy-url-btn">URL 복사</button>
+      </div>
+      <div class="success-qr-row">
+        <canvas id="qr-canvas"></canvas>
+        <button id="download-qr-btn">QR코드 다운로드</button>
+      </div>
+      <div class="success-share-row">
+        <button id="kakao-share-btn">카카오톡 공유</button>
+      </div>
+    </div>
+    <a href="/" class="home-link">메인으로 돌아가기</a>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+  <script type="module">
+    // 실제 inviteId와 URL은 location.search 또는 localStorage에서 불러온다고 가정
+    const inviteId = new URLSearchParams(window.location.search).get('id') || 'abcd1234';
+    const inviteUrl = `https://mywedding.site/invite/${inviteId}`;
+    document.getElementById('invite-url').textContent = inviteUrl;
+
+    // URL 복사 기능
+    document.getElementById('copy-url-btn').addEventListener('click', () => {
+      navigator.clipboard.writeText(inviteUrl).then(() => {
+        alert('URL이 복사되었습니다!');
+      });
+    });
+
+    // QR코드 생성
+    const qr = new QRious({
+      element: document.getElementById('qr-canvas'),
+      value: inviteUrl,
+      size: 160
+    });
+
+    // QR코드 다운로드
+    document.getElementById('download-qr-btn').addEventListener('click', () => {
+      const link = document.createElement('a');
+      link.href = qr.toDataURL();
+      link.download = `invite-${inviteId}-qr.png`;
+      link.click();
+    });
+
+    // 카카오톡 공유 (JS SDK 필요, 예시 안내)
+    document.getElementById('kakao-share-btn').addEventListener('click', () => {
+      if (window.Kakao && window.Kakao.isInitialized && window.Kakao.isInitialized()) {
+        window.Kakao.Link.sendDefault({
+          objectType: 'feed',
+          content: {
+            title: '나만의 청첩장',
+            description: '청첩장에 초대합니다!',
+            imageUrl: 'https://mywedding.site/logo.png', // 대표 이미지로 교체
+            link: { mobileWebUrl: inviteUrl, webUrl: inviteUrl }
+          },
+          buttons: [
+            { title: '청첩장 보기', link: { mobileWebUrl: inviteUrl, webUrl: inviteUrl } }
+          ]
+        });
+      } else {
+        alert('카카오톡 공유를 위해 JS SDK가 필요합니다.\nindex.html에 Kakao SDK를 추가하고, window.Kakao.init(\'YOUR_APP_KEY\')을 호출하세요.');
+      }
+    });
+  </script>
+</body>
+</html> 

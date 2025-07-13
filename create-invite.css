@@ -1,0 +1,108 @@
+.invite-form-container {
+  max-width: 520px;
+  margin: 60px auto;
+  background: #fff8fa;
+  border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(220, 120, 170, 0.10), 0 1.5px 6px rgba(255, 200, 220, 0.10);
+  padding: 40px 32px 32px 32px;
+  border: 1.5px solid #ffe0ef;
+}
+
+.invite-form-container h1 {
+  text-align: center;
+  color: #d48c9c;
+  font-family: 'Nanum Myeongjo', serif;
+  font-size: 2.1rem;
+  margin-bottom: 32px;
+  letter-spacing: 1px;
+}
+
+#invite-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+label {
+  color: #b07a8c;
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+input[type="text"],
+input[type="tel"],
+input[type="date"],
+input[type="time"],
+input[type="url"],
+input[type="file"],
+textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid #ffd6e6;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 1rem;
+  transition: border 0.2s;
+}
+
+input:focus, textarea:focus {
+  border: 1.5px solid #e7b6c9;
+  outline: none;
+}
+
+input[type="checkbox"], input[type="radio"] {
+  accent-color: #d48c9c;
+  margin-right: 7px;
+}
+
+.msg-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 7px;
+}
+
+#photo-preview {
+  margin-top: 8px;
+  min-height: 40px;
+}
+#photo-preview img {
+  max-width: 100%;
+  max-height: 120px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(220, 120, 170, 0.10);
+  border: 1px solid #ffe0ef;
+}
+
+button[type="submit"] {
+  width: 100%;
+  padding: 13px 0;
+  background: linear-gradient(90deg, #f7c6d6 0%, #ffe6f0 100%);
+  color: #a05c7b;
+  font-weight: bold;
+  font-size: 1.1rem;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(220, 120, 170, 0.08);
+  cursor: pointer;
+  margin-top: 8px;
+  transition: background 0.2s;
+}
+
+button[type="submit"]:hover {
+  background: linear-gradient(90deg, #ffe6f0 0%, #f7c6d6 100%);
+}
+
+#invite-message {
+  margin-top: 18px;
+  text-align: center;
+  color: #c06c8c;
+  font-size: 1rem;
+  min-height: 24px;
+} 
