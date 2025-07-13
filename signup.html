@@ -54,7 +54,7 @@
       }
 
       // 이메일 중복 체크 (users 테이블 기준)
-      messageDiv.textContent = '이메일 중복 확인 중...';
+     // messageDiv.textContent = '이메일 중복 확인 중...';
       const duplicated = await isEmailDuplicated(email);
       if (duplicated) {
         messageDiv.textContent = '이미 가입된 이메일입니다.';
